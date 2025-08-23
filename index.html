@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Yashwenth S">
+    <meta name="description" content="The interactive portfolio of Yashwenth S, a Computer Science Engineer and 4x Hackathon Champion.">
+    
+    <title>Yashwenth S | Interactive Portfolio</title>
+    
+    <!-- Google Fonts: Fira Code for terminal, Poppins for GUI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" xintegrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* CSS Reset and Global Styles */
+        :root {
+            --bg-color: #1a1b26;
+            --terminal-bg: #1e1e2e;
+            --text-color: #c0c5ce;
+            --primary-color: #00aaff;
+            --secondary-color: #7aa2f7;
+            --comment-color: #565f89;
+            --error-color: #f7768e;
+            --success-color: #9ece6a;
+            --warning-color: #e0af68;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* --- Particle Background --- */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Behind content, above bg */
+            display: none; /* Hidden until GUI starts */
+        }
+
+        /* --- Terminal Styles --- */
+        #terminal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--terminal-bg);
+            font-family: 'Fira Code', monospace;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 100;
+            display: block; /* Initially visible */
+            transition: opacity 0.5s ease-out;
+        }
+
+        #terminal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #terminal-output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+            transition: opacity 0.5s;
+        }
+
+        .prompt {
+            color: var(--success-color);
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+
+        #terminal-input {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-family: 'Fira Code', monospace;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        .cursor {
+            background-color: var(--primary-color);
+            animation: blink 1s step-end infinite;
+            display: inline-block;
+            width: 8px; /* Width of a character */
+            height: 1.2em;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: var(--primary-color); }
+        }
+
+        .command-output { color: var(--text-color); }
+        .command-output .highlight { color: var(--secondary-color); }
+        .command-output .error { color: var(--error-color); }
+        .command-output .comment { color: var(--comment-color); }
+        .highlight-command { color: var(--warning-color); font-weight: bold; }
+        .ascii-art {
+            color: var(--primary-color);
+            font-weight: bold;
+            white-space: pre;
+            line-height: 1.1;
+            font-size: 0.9rem;
+        }
+
+
+        /* --- GUI Content Styles --- */
+        #gui-content {
+            display: none; /* Initially hidden */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            padding: 0 5%;
+            position: relative;
+            z-index: 10;
+        }
+
+        #gui-content.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 40px;
+            font-family: 'Fira Code', monospace;
+            text-align: center;
+        }
+
+        section {
+            padding: 80px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header & Navigation */
+        #main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            position: sticky;
+            top: 0;
+            background-color: rgba(26, 27, 38, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 50;
+        }
+
+        #main-header .logo {
+            font-family: 'Fira Code', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        #main-header nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            margin-left: 25px;
+            font-family: 'Fira Code', monospace;
+            transition: color 0.3s;
+        }
+
+        #main-header nav a:hover {
+            color: var(--primary-color);
+        }
+
+        /* About Section */
+        #about .about-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        #about .name-title {
+            font-size: 4rem;
+            font-weight: 600;
+        }
+        #about .tagline {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+        }
+        
+        #about .about-content {
+            display: flex;
+            gap: 50px;
+            align-items: flex-start;
+        }
+
+        .about-text {
+            flex: 1;
+        }
+
+        #about .profile-summary {
+            text-align: justify;
+            margin-bottom: 30px;
+        }
+        
+        #about .education-timeline {
+            border-left: 2px solid var(--primary-color);
+            padding-left: 20px;
+        }
+        
+        #about .education-timeline h3 {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        #about .timeline-item {
+            margin-bottom: 20px;
+        }
+        
+        #about .timeline-item .date {
+            font-family: 'Fira Code', monospace;
+            color: var(--comment-color);
+            font-size: 0.9rem;
+        }
+
+        #about .timeline-item h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        #about .timeline-item .grade {
+            font-style: italic;
+        }
+
+        /* --- NEW Interactive Experience Timeline --- */
+        .experience-container {
+            display: flex;
+            position: relative;
+        }
+
+        .experience-container::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background-color: var(--comment-color);
+        }
+
+        .job-list {
+            flex: 0 0 300px; /* Width of the job list column */
+            padding-right: 30px;
+        }
+
+        .job-title {
+            padding: 15px 20px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+            border-radius: 5px;
+        }
+
+        .job-title::before {
+            content: '';
+            position: absolute;
+            left: -24px; /* (30px padding - 6px width) / 2 - 30px padding-right of container */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: var(--bg-color);
+            border: 2px solid var(--comment-color);
+            border-radius: 50%;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        
+        .job-title h3 {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            transition: color 0.3s;
+        }
+        
+        .job-title p {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--comment-color);
+        }
+
+        .job-title.active h3 {
+            color: var(--primary-color);
+        }
+        
+        .job-title.active::before {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .job-details-container {
+            flex-grow: 1;
+            padding-left: 30px;
+        }
+
+        .job-details {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .job-details.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .job-details h3 { font-size: 1.5rem; color: var(--secondary-color); }
+        .job-details h4 { font-size: 1.2rem; font-weight: 400; margin-bottom: 10px; }
+        .job-details .meta { font-family: 'Fira Code', monospace; color: var(--comment-color); margin-bottom: 20px; }
+        .job-details ul { list-style-type: none; padding-left: 0; }
+        .job-details ul li { margin-bottom: 10px; }
+        .job-details ul li::before { content: '> '; color: var(--primary-color); }
+
+
+        /* Projects Section */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card {
+            background-color: var(--terminal-bg);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--comment-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 170, 255, 0.1);
+        }
+
+        .project-card h3 { color: var(--secondary-color); margin-bottom: 10px; }
+        .project-card p { flex-grow: 1; margin-bottom: 20px; }
+        .project-card .tags { margin-bottom: 20px; }
+        .project-card .tags span {
+            background-color: var(--comment-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .project-card .links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        .project-card .links a:hover { color: var(--secondary-color); }
+        .project-card .links a i { margin-right: 8px; }
+
+        /* Accolades Section */
+        .accolades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+        .accolades-grid .column h3 {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+        .accolades-grid .column h3 i { margin-right: 10px; }
+        .accolades-grid .column ul { list-style: none; }
+        .accolades-grid .column ul li { margin-bottom: 10px; }
+        .accolades-grid .column ul li::before { content: '✓ '; color: var(--success-color); }
+        .publication { margin-bottom: 20px; }
+        .publication h4 { font-size: 1.1rem; }
+        .publication p { font-style: italic; color: var(--comment-color); }
+        .publication a { color: var(--primary-color); text-decoration: none; }
+
+        /* Contact Section */
+        #contact { text-align: center; }
+        #contact p { max-width: 600px; margin: 0 auto 30px; }
+        .contact-links a {
+            display: inline-block;
+            margin: 0 15px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+        .contact-links a:hover { color: var(--primary-color); }
+        .contact-links a i { margin-right: 8px; }
+        .social-icons { margin-top: 30px; }
+        .social-icons a {
+            color: var(--text-color);
+            font-size: 2rem;
+            margin: 0 15px;
+            transition: color 0.3s, transform 0.3s;
+        }
+        .social-icons a:hover { color: var(--primary-color); transform: scale(1.2); }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+            border-top: 1px solid var(--comment-color);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--comment-color);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .section-title { font-size: 2rem; }
+            #about .about-content { flex-direction: column; align-items: center; }
+        }
+
+        @media (max-width: 768px) {
+            #main-header { flex-direction: column; }
+            #main-header nav { margin-top: 10px; }
+            #main-header nav a { margin: 0 10px; }
+            #about .name-title { font-size: 3rem; }
+            #about .tagline { font-size: 1.2rem; }
+            .ascii-art { font-size: 0.6rem; }
+            .experience-container { flex-direction: column; }
+            .job-list { flex-basis: auto; width: 100%; padding-right: 0; }
+            .job-details-container { padding-left: 20px; padding-top: 20px; }
+            .experience-container::before { left: 10px; }
+            .job-title::before { left: -15px; }
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+    <!-- =================================================================
+    TERMINAL INTERFACE SECTION
+    ================================================================== -->
+    <div id="terminal">
+        <div id="terminal-output"></div>
+        <div class="terminal-input-line">
+            <span class="prompt">Yashwenth_S:~$</span>
+            <input type="text" id="terminal-input" autocomplete="off" autofocus />
+            <span class="cursor">_</span>
+        </div>
+    </div>
+
+    <!-- =================================================================
+    GUI CONTENT SECTION
+    ================================================================== -->
+    <main id="gui-content">
+
+        <!-- Header & Navigation -->
+        <header id="main-header">
+            <div class="logo">Yashwenth_S.OS</div>
+            <nav>
+                <a href="#about">// about</a>
+                <a href="#experience">// experience</a>
+                <a href="#projects">// projects</a>
+                <a href="#accolades">// accolades</a>
+                <a href="#contact">// contact</a>
+            </nav>
+        </header>
+
+        <!-- About Section -->
+        <section id="about">
+            <div class="about-header">
+                <h1 class="name-title">Yashwenth S</h1>
+                <h2 class="tagline">Computer Science Engineer | 4x Hackathon Champion | Collaborative Innovator</h2>
+            </div>
+            <div class="about-content">
+                <div class="about-text">
+                    <p class="profile-summary">
+                        Computer Science Engineering student (CGPA: 8.92) and 4x hackathon champion, including nationals. Experience as an Intern Analyst in Wells Fargo. Collaborative innovator bridging tech with diverse domains, representing India in world-level competitions. Curiosity drove me to explore tech ecosystems nationwide and Japan’s R&D immersion program. Passionate about crafting Website, IoT, Deep Learning & App solutions for real-world impact. Quick-learning problem-solver thriving in cross-functional teams to turn complex ideas into deployable tech.
+                    </p>
+                    <div class="education-timeline">
+                        <h3>Education</h3>
+                        <div class="timeline-item">
+                            <p class="date">Oct 2022 - Present</p>
+                            <h4>SASTRA Deemed University</h4>
+                            <p>B.Tech Computer Science Engineering</p>
+                            <p class="grade"><strong>CGPA:</strong> 8.92 / 10</p>
+                        </div>
+                        <div class="timeline-item">
+                            <p class="date">June 2020 - May 2022</p>
+                            <h4>Kendriya Vidyalaya - 2</h4>
+                            <p>Higher Secondary Education</p>
+                            <p class="grade"><strong>Percentage:</strong> 97%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Experience Section -->
+        <section id="experience">
+            <h2 class="section-title">// Professional Journey</h2>
+            <div class="experience-container">
+                <div class="job-list">
+                    <div class="job-title active" data-job="wells-fargo">
+                        <h3>Intern Analyst</h3>
+                        <p>@ Wells Fargo</p>
+                    </div>
+                    <div class="job-title" data-job="hiroshima">
+                        <h3>Research Immersion Fellow</h3>
+                        <p>@ Hiroshima University</p>
+                    </div>
+                    <div class="job-title" data-job="bhavini">
+                        <h3>Python - IoT Intern</h3>
+                        <p>@ BHAVINI Nuclear Power Plant</p>
+                    </div>
+                    <div class="job-title" data-job="ace">
+                        <h3>Overall Technical Head</h3>
+                        <p>@ ACE, SASTRA University</p>
+                    </div>
+                    <div class="job-title" data-job="bws">
+                        <h3>Full Stack Web Developer</h3>
+                        <p>@ Business Web Solutions</p>
+                    </div>
+                </div>
+                <div class="job-details-container">
+                    <div class="job-details active" id="wells-fargo">
+                        <h3>Intern Analyst</h3>
+                        <h4>@ Wells Fargo</h4>
+                        <p class="meta">June 2025 - August 2025 | Bengaluru, India</p>
+                        <ul>
+                            <li>Worked as an intern analyst in one of the Top 5 Financial companies of US.</li>
+                            <li>Performed Automation of Controls which increased efficiency about 80%.</li>
+                            <li>Tech stack and Workflow is not revealed due to company policies.</li>
+                        </ul>
+                    </div>
+                    <div class="job-details" id="hiroshima">
+                        <h3>Research Immersion Fellow</h3>
+                        <h4>@ Hiroshima University, Japan</h4>
+                        <p class="meta">Dec 2024 – Jan 2025 | Hiroshima, Japan</p>
+                        <ul>
+                            <li>Selected for a 14-day transdisciplinary program to study and experience advanced R&D methodologies.</li>
+                            <li>Industrial visits to JFE Steel Corporation, RISE Japan, and Micron Technology.</li>
+                        </ul>
+                    </div>
+                    <div class="job-details" id="bhavini">
+                        <h3>Python - IoT Development Intern</h3>
+                        <h4>@ BHAVINI Nuclear Power Plant</h4>
+                        <p class="meta">Dec 2023 – Jan 2024 | Kalpakkam, TN</p>
+                        <ul>
+                            <li>Worked as a project intern in one of India's premier nuclear energy facilities, BHAVINI.</li>
+                            <li>Gained skill on implementing IoT for remote operations, using Python for development.</li>
+                        </ul>
+                    </div>
+                    <div class="job-details" id="ace">
+                        <h3>Overall Technical Head</h3>
+                        <h4>@ Association of Computing Engineers, SASTRA University</h4>
+                        <p class="meta">Aug 2023 - April 2025 | Thanjavur, TN</p>
+                        <ul>
+                            <li>Managed a 150+ members association across 6 varied technical clusters.</li>
+                            <li>Organized 5+ tech events, collaborated in 3 projects, and mentored two hackathon teams.</li>
+                        </ul>
+                    </div>
+                    <div class="job-details" id="bws">
+                        <h3>Full Stack Web Developer Intern</h3>
+                        <h4>@ Business Web Solutions</h4>
+                        <p class="meta">Dec 2023 | Remote</p>
+                        <ul>
+                            <li>Created web products using MongoDB, React, Bootstrap, NodeJS and Express.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects">
+            <h2 class="section-title">// Innovation Hub</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <h3>Jaldi.in - Water Management System</h3>
+                    <p>Ministry-recognized platform for Jal Jeevan Mission with predictive maintenance and GIS integration. (Smart India Hackathon Finale '24)</p>
+                    <div class="tags">
+                        <span>Android</span><span>Firebase</span><span>Python</span><span>QGIS</span>
+                    </div>
+                    <div class="links">
+                        <a href="https://github.com/yashwenth27/Jaldi.in" target="_blank"><i class="fab fa-github"></i> View Code</a>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>MERIT - AMR Surveillance Platform</h3>
+                    <p>Global finalist project analyzing ESKAPEE pathogens with associative mining and ML models. (Vivli AMR, Europe Finalist)</p>
+                    <div class="tags">
+                        <span>Flask</span><span>Python</span><span>Machine Learning</span><span>Firebase</span>
+                    </div>
+                    <div class="links">
+                        <a href="https://merit.sastra.edu/" target="_blank"><i class="fas fa-external-link-alt"></i> Live Demo</a>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>TruthMesh - Fake News Detection</h3>
+                    <p>Crowd-sourced verification platform using NLP and Classifier Models.</p>
+                    <div class="tags">
+                        <span>NLP</span><span>Firebase</span><span>APIs</span><span>Streamlit</span>
+                    </div>
+                    <div class="links">
+                        <a href="https://github.com/yashwenth27/TruthMesh" target="_blank"><i class="fab fa-github"></i> View Code</a>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>Real-Time IoT Environmental Dashboard</h3>
+                    <p>Developed live monitoring system for air quality metrics with &lt;200ms latency.</p>
+                    <div class="tags">
+                        <span>MQTT</span><span>Arduino</span><span>Python</span>
+                    </div>
+                    <div class="links">
+                        <a href="https://github.com/yashwenth27/IoT-Dashboard" target="_blank"><i class="fab fa-github"></i> View Code</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accolades Section -->
+        <section id="accolades">
+            <h2 class="section-title">// Accolades & Publications</h2>
+            <div class="accolades-grid">
+                <div class="column">
+                    <h3><i class="fas fa-trophy"></i> Achievements</h3>
+                    <ul>
+                        <li>2x SIH Grand Finalist (2023, 2024)</li>
+                        <li>Global AMR Finalist (2024)</li>
+                        <li>TATA Communication Hackathon Runner-Up (2023)</li>
+                        <li>Japan R&D Fellow (Hiroshima University)</li>
+                        <li>Top 10 @ IIT Madras Hackathon (out of 1,318 teams)</li>
+                        <li>Oracle APEX Hackathon Winner</li>
+                        <li>CBSE Top 1.5% (97% with centum in CS)</li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h3><i class="fas fa-certificate"></i> Certifications</h3>
+                    <ul>
+                        <li>Computer Vision Basics (IBM)</li>
+                        <li>Machine Learning & Generative AI (Udemy)</li>
+                        <li>C# Game Development (Udemy)</li>
+                        <li>Complete Java Development (Udemy)</li>
+                        <li>UI/UX Design Specialization (GUVI)</li>
+                        <li>Cyber Forensics Fundamentals (Great Learning)</li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h3><i class="fas fa-book-open"></i> Publications</h3>
+                    <div class="publication">
+                        <h4>Exploring the Evolution of Multidrug Resistance Patterns in ESKAPEE Pathogens</h4>
+                        <p>Sasikala Rajendran, Srimathy Ramachandran, Akilandeswari Ramu, <strong>Yashwenth S</strong></p>
+                        <a href="https://amr.vivli.org/exploring-the-evolution-of-multidrug-resistance-patterns-in-eskapee-pathogens-using-association-mining-key-to-antibiotic-stewardship/" target="_blank">AMR Challenge Finalist Publication</a>
+                    </div>
+                     <div class="publication">
+                        <h4>Python GUI to Interface AtMega328P</h4>
+                        <p><strong>Yashwenth S</strong>, S.S.Biswas</p>
+                        <a href="https://store.pothi.com/book/ebook-sitangshu-sekhar-biswas-python-gui-interface-atmega328p/" target="_blank">View on Pothi.com</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact">
+            <h2 class="section-title">// Get In Touch</h2>
+            <p>I'm currently seeking new opportunities and am always open to collaborations. Let's build something amazing together.</p>
+            <div class="contact-links">
+                <a href="mailto:yashwenth27@gmail.com"><i class="fas fa-envelope"></i> yashwenth27@gmail.com</a>
+                <a href="tel:+919080237017"><i class="fas fa-phone"></i> +91 90802 37017</a>
+            </div>
+            <div class="social-icons">
+                <a href="https://linkedin.com/in/its-yashwenth" target="_blank" aria-label="LinkedIn Profile"><i class="fab fa-linkedin-in"></i></a>
+                <a href="https://github.com/Yashwenth27" target="_blank" aria-label="GitHub Profile"><i class="fab fa-github"></i></a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p id="footer-text">Last updated on 24th August 2025. Designed & Built by Yashwenth S.</p>
+        </footer>
+        
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const terminal = document.getElementById('terminal');
+            const terminalOutput = document.getElementById('terminal-output');
+            const terminalInput = document.getElementById('terminal-input');
+            const guiContent = document.getElementById('gui-content');
+            const particleCanvas = document.getElementById('particle-canvas');
+            const commandHistory = [];
+            let historyIndex = -1;
+
+            const commands = {
+                'help': `
+<span class="command-output">Available commands:
+  <span class="highlight">whoami</span>      - Shows a brief summary about me.
+  <span class="highlight">experience</span>  - Lists my professional experience.
+  <span class="highlight">projects</span>    - Displays my key projects.
+  <span class="highlight">contact</span>     - Shows my contact information.
+  <span class="highlight">start-gui</span>   - Launches the full graphical portfolio.
+  <span class="highlight">clear</span>       - Clears the terminal screen.
+</span>`,
+                'whoami': `
+<span class="command-output">
+<span class="highlight">Yashwenth S</span>
+Computer Science Engineering student (CGPA: 8.92) and 4x hackathon champion. 
+Passionate about crafting Website, IoT, Deep Learning & App solutions for real-world impact. 
+Quick-learning problem-solver thriving in cross-functional teams to turn complex ideas into deployable tech.
+</span>`,
+                'experience': `
+<span class="command-output">
+<span class="highlight">Intern Analyst @ Wells Fargo</span> (June 2025 - Aug 2025)
+  - Automated controls, boosting efficiency by ~80%.
+
+<span class="highlight">Research Immersion Fellow @ Hiroshima University</span> (Dec 2024 – Jan 2025)
+  - Studied advanced R&D methodologies and visited top tech corporations in Japan.
+
+<span class="highlight">Python - IoT Intern @ BHAVINI Nuclear Power Plant</span> (Dec 2023 – Jan 2024)
+  - Implemented IoT for remote operations using Python.
+
+<span class="highlight">Overall Technical Head @ ACE, SASTRA</span> (Aug 2023 - Apr 2025)
+  - Managed a 150+ member association and mentored hackathon teams.
+</span>`,
+                'projects': `
+<span class="command-output">
+<span class="highlight">Jaldi.in</span> - Water Management System for Jal Jeevan Mission. (SIH '24 Finalist)
+  - Tech: Android, Firebase, Python, QGIS
+
+<span class="highlight">MERIT</span> - AMR Surveillance Platform analyzing ESKAPEE pathogens. (Vivli AMR Finalist)
+  - Tech: Flask, Python, ML, Firebase
+
+<span class="highlight">TruthMesh</span> - Fake News Detection using NLP and crowd-sourcing.
+  - Tech: NLP, Firebase, Streamlit
+
+<span class="highlight">IoT Dashboard</span> - Real-time environmental monitoring with <200ms latency.
+  - Tech: MQTT, Arduino, Python
+</span>`,
+                'contact': `
+<span class="command-output">
+  <span class="highlight">Email:</span>     <a href="mailto:yashwenth27@gmail.com">yashwenth27@gmail.com</a>
+  <span class="highlight">LinkedIn:</span>  <a href="https://linkedin.com/in/its-yashwenth" target="_blank">linkedin.com/in/its-yashwenth</a>
+  <span class="highlight">GitHub:</span>    <a href="https://github.com/Yashwenth27" target="_blank">github.com/Yashwenth27</a>
+  <span class="highlight">Phone:</span>     +91 90802 37017
+</span>`,
+                'start-gui': `
+<span class="command-output comment">Initializing graphical user interface...</span>`
+            };
+            
+            const asciiArt = `
+<span class="ascii-art">╦ ╦╔═╗╔═╗╦ ╦╦ ╦╔═╗╔╗╔╔╦╗╦ ╦ ╔═╗       ╔═╗╔═╗
+╚╦╝╠═╣╚═╗╠═╣║║║║╣ ║║║ ║ ╠═╣ ╚═╗  ───  ║ ║╚═╗
+ ╩ ╩ ╩╚═╝╩ ╩╚╩╝╚═╝╝╚╝ ╩ ╩ ╩o╚═╝       ╚═╝╚═╝
+</span>`;
+
+            const bootSequence = [
+                { text: asciiArt, delay: 100, isHtml: true },
+                { text: 'YASHWENTH_OS v1.0 booting...', delay: 100 },
+                { text: 'Initializing kernel...', delay: 150 },
+                { text: 'Loading modules... [OK]', delay: 200 },
+                { text: 'Connecting to network... [OK]', delay: 150 },
+                { text: 'Compiling achievements... [DONE]', delay: 200 },
+                { text: 'Welcome, user.', delay: 100 },
+                { text: `Type <span class="highlight-command">'help'</span> for commands or <span class="highlight-command">'start-gui'</span> to launch the portfolio.`, delay: 100, isHtml: true }
+            ];
+
+            function typeLine(line, callback) {
+                const p = document.createElement('p');
+                terminalOutput.appendChild(p);
+                
+                if (line.isHtml) {
+                    p.innerHTML = line.text;
+                    callback();
+                    return;
+                }
+
+                let i = 0;
+                function typeChar() {
+                    if (i < line.text.length) {
+                        p.innerHTML += line.text.charAt(i);
+                        i++;
+                        setTimeout(typeChar, 10);
+                    } else {
+                        callback();
+                    }
+                }
+                typeChar();
+            }
+
+            function runBootSequence(index = 0) {
+                if (index < bootSequence.length) {
+                    setTimeout(() => {
+                        typeLine(bootSequence[index], () => runBootSequence(index + 1));
+                    }, bootSequence[index].delay);
+                } else {
+                    document.querySelector('.terminal-input-line').style.opacity = 1;
+                    terminalInput.focus();
+                }
+            }
+            
+            function setupParticleAnimation() {
+                const ctx = particleCanvas.getContext('2d');
+                let particlesArray;
+
+                function initParticles() {
+                    particleCanvas.width = window.innerWidth;
+                    particleCanvas.height = window.innerHeight;
+                    particlesArray = [];
+                    // Increased particle density by reducing the divisor
+                    const numberOfParticles = (particleCanvas.width * particleCanvas.height) / 5000;
+
+                    for (let i = 0; i < numberOfParticles; i++) {
+                        const maxOpacity = Math.random() * 0.3 + 0.1; // Each particle has its own max brightness
+                        particlesArray.push({
+                            x: Math.random() * particleCanvas.width,
+                            y: Math.random() * particleCanvas.height,
+                            radius: Math.random() * 1.5 + 0.5,
+                            maxOpacity: maxOpacity,
+                            minOpacity: 0.05,
+                            opacity: Math.random() * maxOpacity, // Start with random opacity
+                            opacityDirection: Math.random() > 0.5 ? 1 : -1, // 1 for increasing, -1 for decreasing
+                            speed: Math.random() * 0.001 + 0.0001 // Each particle has a random speed
+                        });
+                    }
+                }
+
+                function animateParticles() {
+                    ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+                    for (let i = 0; i < particlesArray.length; i++) {
+                        const p = particlesArray[i];
+
+                        // Update opacity for the shimmer effect
+                        p.opacity += p.speed * p.opacityDirection;
+
+                        // Reverse direction if opacity hits the min/max bounds
+                        if (p.opacity > p.maxOpacity || p.opacity < p.minOpacity) {
+                            p.opacityDirection *= -1;
+                        }
+
+                        // Draw the particle
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(0, 170, 255, ${p.opacity})`;
+                        ctx.fill();
+                    }
+                    requestAnimationFrame(animateParticles);
+                }
+
+                initParticles();
+                animateParticles();
+
+                window.addEventListener('resize', () => {
+                    initParticles();
+                });
+            }
+
+
+            function handleCommand(command) {
+                const output = document.createElement('div');
+                output.innerHTML = `<span class="prompt">Yashwenth_S:~$</span> ${command}`;
+                terminalOutput.appendChild(output);
+
+                if (command in commands) {
+                    const response = document.createElement('div');
+                    response.innerHTML = commands[command];
+                    terminalOutput.appendChild(response);
+                    if (command === 'start-gui') {
+                        setTimeout(() => {
+                            terminal.classList.add('hidden');
+                            setTimeout(() => {
+                                document.getElementById('terminal').style.display = 'none';
+                                guiContent.classList.add('visible');
+                                particleCanvas.style.display = 'block';
+                                setupParticleAnimation();
+                            }, 500);
+                        }, 1000);
+                    }
+                } else if (command === 'clear') {
+                    terminalOutput.innerHTML = '';
+                    const art = document.createElement('p');
+                    art.innerHTML = asciiArt;
+                    terminalOutput.appendChild(art);
+                } else if(command.trim() !== '') {
+                    const error = document.createElement('div');
+                    error.innerHTML = `<span class="error">Command not found: ${command}. Type 'help' for a list of commands.</span>`;
+                    terminalOutput.appendChild(error);
+                }
+
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+
+            terminalInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const command = terminalInput.value.trim();
+                    if (command) {
+                       commandHistory.unshift(command);
+                       historyIndex = -1;
+                    }
+                    handleCommand(command);
+                    terminalInput.value = '';
+                } else if (e.key === 'ArrowUp') {
+                    if (historyIndex < commandHistory.length - 1) {
+                        historyIndex++;
+                        terminalInput.value = commandHistory[historyIndex];
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    if (historyIndex > 0) {
+                        historyIndex--;
+                        terminalInput.value = commandHistory[historyIndex];
+                    } else {
+                        historyIndex = -1;
+                        terminalInput.value = '';
+                    }
+                }
+            });
+            
+            terminal.addEventListener('click', () => {
+                terminalInput.focus();
+            });
+
+            // --- Interactive Experience Timeline Logic ---
+            const jobTitles = document.querySelectorAll('.job-title');
+            const jobDetails = document.querySelectorAll('.job-details');
+
+            jobTitles.forEach(title => {
+                title.addEventListener('click', () => {
+                    // Get the target job ID from the data attribute
+                    const targetId = title.getAttribute('data-job');
+                    const targetDetail = document.getElementById(targetId);
+
+                    // Remove 'active' from all titles and details
+                    jobTitles.forEach(t => t.classList.remove('active'));
+                    jobDetails.forEach(d => d.classList.remove('active'));
+
+                    // Add 'active' to the clicked title and corresponding detail
+                    title.classList.add('active');
+                    targetDetail.classList.add('active');
+                });
+            });
+
+
+            // Hide input during boot
+            document.querySelector('.terminal-input-line').style.opacity = 0;
+            runBootSequence();
+        });
+    </script>
+
+</body>
+</html>
