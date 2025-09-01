@@ -86,7 +86,8 @@ My passion for innovation has taken me from India to Japan, exploring advanced R
 
 ## 📑 Publications
 - *Exploring the Evolution of Multidrug Resistance Patterns in ESKAPEE Pathogens* – Finalist Publication at AMR Challenge  
-  *(Co-authored with Sasikala Rajendran, Srimathy Ramachandran, Akilandeswari Ramu, and myself)*
+  *(Co-authored with Sasikala Rajendran, Srimathy Ramachandran, Akilandeswari Ramu, and myself)* - Peer Review
+- ORCID ID : https://orcid.org/0009-0002-9033-5391
 
 ---
 
